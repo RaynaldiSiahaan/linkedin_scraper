@@ -261,10 +261,14 @@ async def is_logged_in(page: Page) -> bool:
             return False
         
         # Step 2: Selector check (PRIMARY) - check for nav elements
+        # Old selectors
         old_selectors = '.global-nav__primary-link, [data-control-name="nav.settings"]'
         old_count = await page.locator(old_selectors).count()
         
-        new_selectors = 'nav a[href*="/feed"], nav button:has-text("Home"), nav a[href*="/mynetwork"]'
+        # New selectors (nav elements)
+        # Added .global-nav__me which is the "Me" icon, very reliable
+        # Added .search-global-typeahead__input which is the search bar
+        new_selectors = 'nav a[href*="/feed"], nav button:has-text("Home"), nav a[href*="/mynetwork"], .global-nav__me, input.search-global-typeahead__input'
         new_count = await page.locator(new_selectors).count()
         
         has_nav_elements = old_count > 0 or new_count > 0

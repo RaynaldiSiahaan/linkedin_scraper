@@ -43,8 +43,14 @@ class BaseScraper:
             AuthenticationError: If not logged in
         """
         if not await is_logged_in(self.page):
+            url = self.page.url
+            try:
+                title = await self.page.title()
+            except:
+                title = "Unknown"
+                
             raise AuthenticationError(
-                "Not logged in. Please authenticate before scraping."
+                f"Not logged in. Current URL: {url}, Title: {title}. Please authenticate before scraping."
             )
     
     async def check_rate_limit(self) -> None:
@@ -149,7 +155,7 @@ class BaseScraper:
             timeout: Timeout in milliseconds
         """
         try:
-            await self.page.wait_for_load_state('networkidle', timeout=timeout)
+            await self.page.wait_for_load_state('domcontentloaded', timeout=timeout)
         except PlaywrightTimeoutError:
             logger.warning("Navigation did not complete within timeout")
     

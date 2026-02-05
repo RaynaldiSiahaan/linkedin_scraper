@@ -14,7 +14,8 @@ creds.json
 venv
 *.zip
 .env
-
+.env.*
+.env.example
 # Test outputs
 *.log
 test_*.db
@@ -43,3 +44,8 @@ MANIFEST.ini
 # Basic package build artifacts
 build-basic/
 dist-basic/
+
+#misc
+*.png
+*.docx
+*.xlsx

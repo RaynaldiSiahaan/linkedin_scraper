@@ -4,6 +4,8 @@ import logging
 from typing import Optional
 from urllib.parse import urljoin
 from playwright.async_api import Page
+import asyncio
+import random
 
 from .base import BaseScraper
 from ..models import Person, Experience, Education, Accomplishment, Interest, Contact
@@ -11,7 +13,7 @@ from ..callbacks import ProgressCallback, SilentCallback
 from ..core.exceptions import ScrapingError
 
 logger = logging.getLogger(__name__)
-
+delay = random.uniform(1.2, 3.23)
 
 class PersonScraper(BaseScraper):
     """Async scraper for LinkedIn person profiles."""
@@ -41,6 +43,10 @@ class PersonScraper(BaseScraper):
             ScrapingError: If scraping fails
         """
         await self.callback.on_start("person", linkedin_url)
+        
+        # Ensure URL ends with / for urljoin to work correctly with relative paths
+        if not linkedin_url.endswith("/"):
+            linkedin_url += "/"
 
         try:
             # Navigate to profile first (this loads the page with our session)
@@ -58,32 +64,38 @@ class PersonScraper(BaseScraper):
             name, location = await self._get_name_and_location()
             await self.callback.on_progress(f"Got name: {name}", 20)
 
-            # Check open to work
-            open_to_work = await self._check_open_to_work()
+            # # Check open to work
+            # open_to_work = await self._check_open_to_work()
 
             # Get about
             about = await self._get_about()
             await self.callback.on_progress("Got about section", 30)
 
+            await asyncio.sleep(delay)
             # Scroll to load content
             await self.scroll_page_to_half()
-            await self.scroll_page_to_bottom(pause_time=0.5, max_scrolls=3)
+            await self.scroll_page_to_bottom(pause_time=delay, max_scrolls=3)
 
             # Get experiences
+            await asyncio.sleep(delay)
             experiences = await self._get_experiences(linkedin_url)
             await self.callback.on_progress(f"Got {len(experiences)} experiences", 60)
 
+            await asyncio.sleep(delay)
             educations = await self._get_educations(linkedin_url)
             await self.callback.on_progress(f"Got {len(educations)} educations", 50)
 
-            interests = await self._get_interests(linkedin_url)
-            await self.callback.on_progress(f"Got {len(interests)} interests", 65)
+            # await asyncio.sleep(delay)
+            # interests = await self._get_interests(linkedin_url)
+            # await self.callback.on_progress(f"Got {len(interests)} interests", 65)
 
-            accomplishments = await self._get_accomplishments(linkedin_url)
-            await self.callback.on_progress(
-                f"Got {len(accomplishments)} accomplishments", 85
-            )
+            # await asyncio.sleep(delay)
+            # accomplishments = await self._get_accomplishments(linkedin_url)
+            # await self.callback.on_progress(
+            #     f"Got {len(accomplishments)} accomplishments", 85
+            # )
 
+            await asyncio.sleep(delay)
             contacts = await self._get_contacts(linkedin_url)
             await self.callback.on_progress(f"Got {len(contacts)} contacts", 95)
 
@@ -92,11 +104,11 @@ class PersonScraper(BaseScraper):
                 name=name,
                 location=location,
                 about=about,
-                open_to_work=open_to_work,
+                # open_to_work=open_to_work,
                 experiences=experiences,
                 educations=educations,
-                interests=interests,
-                accomplishments=accomplishments,
+                # interests=interests,
+                # accomplishments=accomplishments,
                 contacts=contacts,
             )
 
@@ -104,6 +116,15 @@ class PersonScraper(BaseScraper):
             await self.callback.on_complete("person", person)
 
             return person
+
+            ##Simulating Human?
+            await self.page.evaluate("window.scrollTo(0, Math.random() * 300)")
+            await asyncio.sleep(random.uniform(0.5, 1.2))
+            
+            # Maybe go to feed between profiles
+            if random.random() < 0.3:  # 30% chance
+                await self.page.goto("https://www.linkedin.com/feed/")
+                await asyncio.sleep(random.uniform(2, 4))
 
         except Exception as e:
             await self.callback.on_error(e)

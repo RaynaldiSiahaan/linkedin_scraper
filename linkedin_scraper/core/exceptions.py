@@ -1,3 +1,4 @@
+import asyncio
 """Custom exceptions for LinkedIn scraper."""
 
 
@@ -14,7 +15,7 @@ class AuthenticationError(LinkedInScraperException):
 class RateLimitError(LinkedInScraperException):
     """Raised when rate limiting is detected."""
     
-    def __init__(self, message: str, suggested_wait_time: int = 300):
+    def __init__(self, message: str, suggested_wait_time: int = 300000):
         super().__init__(message)
         self.suggested_wait_time = suggested_wait_time
 

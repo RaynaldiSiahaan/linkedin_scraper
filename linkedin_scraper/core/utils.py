@@ -1,5 +1,7 @@
 """Utility functions for scraping operations."""
-
+#Debug Body Result
+from docx import Document
+#----
 import asyncio
 import functools
 import logging
@@ -89,6 +91,7 @@ async def detect_rate_limit(page: Page) -> None:
     # Check for rate limit messages
     try:
         body_text = await page.locator('body').text_content(timeout=1000)
+
         if body_text:
             body_lower = body_text.lower()
             if any(phrase in body_lower for phrase in [
@@ -97,11 +100,18 @@ async def detect_rate_limit(page: Page) -> None:
                 'slow down',
                 'try again later'
             ]):
+                doc = Document()
+                doc.add_paragraph(body_text)
+                doc.save('rate_limit_error.docx')
+                print("Successfully saved rate limit error to rate_limit_error.docx")
                 raise RateLimitError(
-                    "Rate limit message detected on page.",
-                    suggested_wait_time=1800  # 30 minutes
+                    "Rate Limit Detected",
+                    suggested_wait_time=18000000  # 30 minutes
+
                 )
+                
     except PlaywrightTimeoutError:
+
         pass
 
 
