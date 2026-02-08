@@ -47,11 +47,11 @@ async def main():
     # Initialize and start browser using context manager
     async with BrowserManager(headless=False,
         args=[
-        '--disable-dev-shm-usage',
-        '--disable-blink-features=AutomationControlled',
-        '--disable-web-security',  # Careful with this
-        '--disable-features=IsolateOrigins,site-per-process',
-        '--no-sandbox',
+        # '--disable-dev-shm-usage',
+        # '--disable-blink-features=AutomationControlled',
+        # '--disable-web-security',  # Careful with this
+        # '--disable-features=IsolateOrigins,site-per-process',
+        # '--no-sandbox',
     ]) as browser:
         # Load existing session (must be created first - see README for setup)
         try:
@@ -78,10 +78,14 @@ async def main():
             print(f"🚀 Scraping: {linkedin_url}")
             
             try:
+                # Start
+                person = await scraper.scrape(linkedin_url)
+
                 # Give page more time to settle
 
-                person = await scraper.scrape(linkedin_url)
-                await asyncio.sleep(15)
+                await page.goto(linkedinUrl, {
+                waitUntil: "domcontentloaded",
+                timeout: 60000,})
 
                 print(f"✓ Success! Current URL: {browser.page.url}")
 
@@ -96,7 +100,7 @@ async def main():
                 for exp in person.experiences[:2]:  # Show first 2
                     print(f"  - {exp.position_title} at {exp.institution_name}")
                 
-                 # Display education
+                # Display education
                 print(f"Education ({len(person.educations)} schools):")
                 for edu in person.educations[:2]:  # Show first 2
                     print(f"  - {edu.institution_name}")

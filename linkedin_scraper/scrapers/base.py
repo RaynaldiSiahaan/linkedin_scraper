@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from typing import Optional
-from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError
+from playwright.async_api import Page, Response, TimeoutError as PlaywrightTimeoutError
 
 from ..callbacks import ProgressCallback, SilentCallback
 from ..core import (
@@ -53,14 +53,14 @@ class BaseScraper:
                 f"Not logged in. Current URL: {url}, Title: {title}. Please authenticate before scraping."
             )
     
-    async def check_rate_limit(self) -> None:
+    async def check_rate_limit(self, response: Optional[Response] = None) -> None:
         """
         Check for rate limiting.
         
         Raises:
             RateLimitError: If rate limiting is detected
         """
-        await detect_rate_limit(self.page)
+        await detect_rate_limit(self.page, response)
     
     async def scroll_page_to_bottom(self, pause_time: float = 1.0, max_scrolls: int = 10) -> None:
         """
@@ -170,8 +170,8 @@ class BaseScraper:
         """
         logger.info(f"Navigating to: {url}")
         # Use type: ignore to bypass strict typing
-        await self.page.goto(url, wait_until=wait_until, timeout=timeout)  # type: ignore
-        await self.check_rate_limit()
+        response = await self.page.goto(url, wait_until=wait_until, timeout=timeout)  # type: ignore
+        await self.check_rate_limit(response)
     
     async def extract_list_items(
         self,

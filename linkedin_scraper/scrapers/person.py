@@ -52,7 +52,7 @@ class PersonScraper(BaseScraper):
             # Navigate to profile first (this loads the page with our session)
             await self.navigate_and_wait(linkedin_url)
             await self.callback.on_progress("Navigated to profile", 10)
-
+    
             # Now check if logged in
             await self.ensure_logged_in()
 

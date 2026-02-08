@@ -6,7 +6,7 @@ import asyncio
 import functools
 import logging
 from typing import Any, Callable, Optional, TypeVar, cast
-from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError
+from playwright.async_api import Page, Response, TimeoutError as PlaywrightTimeoutError
 
 from .exceptions import RateLimitError, ElementNotFoundError, NetworkError
 
@@ -56,12 +56,13 @@ def retry_async(
     return decorator
 
 
-async def detect_rate_limit(page: Page) -> None:
+async def detect_rate_limit(page: Page, response: Optional[Response] = None) -> None:
     """
     Detect if LinkedIn has rate limited the session.
     
     Args:
         page: Playwright page object
+        response: Optional Playwright response object
         
     Raises:
         RateLimitError: If rate limiting is detected
@@ -90,25 +91,59 @@ async def detect_rate_limit(page: Page) -> None:
     
     # Check for rate limit messages
     try:
-        body_text = await page.locator('body').text_content(timeout=1000)
 
         if body_text:
-            body_lower = body_text.lower()
-            if any(phrase in body_lower for phrase in [
-                'too many requests',
-                'rate limit',
-                'slow down',
-                'try again later'
-            ]):
-                doc = Document()
-                doc.add_paragraph(body_text)
-                doc.save('rate_limit_error.docx')
-                print("Successfully saved rate limit error to rate_limit_error.docx")
+            # Look for specific error containers or messages
+            error_selectors = [
+                'text="You\'ve been visiting LinkedIn quite a bit today"',
+                'text="Too many requests"',
+                'text="You\'ve reached your search limit"',
+                '.error-message:has-text("try again later")',
+                '.rate-limit-message',
+            ]
+        
+            for selector in error_selectors:
+                if await page.locator(selector).count() > 0:
+                    # Save for debugging
+                    body_text = await page.locator('body').text_content(timeout=1000)
+                    if body_text:
+                        doc = Document()
+                        doc.add_paragraph(body_text)
+                        doc.save('rate_limit_error.docx')
+                    print("Successfully saved rate limit error to rate_limit_error.docx")
+                
                 raise RateLimitError(
-                    "Rate Limit Detected",
-                    suggested_wait_time=18000000  # 30 minutes
-
+                    "Rate limit message detected on page",
+                    suggested_wait_time=1800  # 30 minutes
                 )
+            ##OLD
+            # body_lower = body_text.lower()
+            # if any(phrase in body_lower for phrase in [
+            #     'too many requests',
+            #     'rate limit',
+            #     'slow down',
+            #     'try again later'
+            # ]):
+            #     index = 1
+            #     index = index+1
+            #     print("Rate-Limit Detected")
+            #     if response:
+            #         print(response.headers)
+            #         print(f"URL after navigation: {page.url}")  # Check for redirects
+            #     html_content = await page.content()
+            #     with open('response.html', 'w', encoding='utf-8') as f:
+            #         f.write(html_content)
+            #     print(f"Content length: {len(html_content)} bytes")
+            #     doc = Document()
+            #     doc.add_paragraph(body_text)
+            #     doc.save('rate_limit_error_{index}.docx')
+            #     print("Successfully saved rate limit error to rate_limit_error.docx")
+            #     await asyncio.sleep(300000)
+            #     raise RateLimitError(
+            #         "Rate Limit Detected",
+            #         suggested_wait_time=18000000  # 30 minutes
+
+            #     )
                 
     except PlaywrightTimeoutError:
 
